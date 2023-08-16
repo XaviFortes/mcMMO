@@ -47,16 +47,14 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    # 4. Build via Maven and capture shaded JAR path
+    # 4. Build via Maven
     - name: Build via Maven
       run: |
         mvn verify -B --file pom.xml -DdisableXmlReport=true
-        shaded_jar_path=$(find /home/runner/work/mcMMO/mcMMO/target -name "mcMMO-*-shaded.jar")
-        echo "$shaded_jar_path" > shaded_jar_path.txt
 
-    # 5. Upload shaded JAR artifact
+    # 5. Upload entire target folder as an artifact
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: mcMMO-shaded-jar
-        path: shaded_jar_path.txt
+        name: mcMMO-artifacts
+        path: /home/runner/work/mcMMO/mcMMO/target
