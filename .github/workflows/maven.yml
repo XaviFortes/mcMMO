@@ -1,7 +1,6 @@
 # This workflow automatically tests new commits and pull requests as they come in.
 # Note that this does not upload any artifacts, you will need to compile mcMMO manually
 # if you wish to create the actual jar.
-# a
 name: Compile and test
 
 on:
@@ -53,12 +52,11 @@ jobs:
       run: |
         mvn verify -B --file pom.xml -DdisableXmlReport=true
         shaded_jar_path=$(find /home/runner/work/mcMMO/mcMMO/target -name "mcMMO-*-shaded.jar")
-        echo "::set-output name=shaded_jar_path::$shaded_jar_path"
-      id: shaded_jar
+        echo "$shaded_jar_path" > shaded_jar_path.txt
 
     # 5. Upload shaded JAR artifact
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: mcMMO-shaded-jar
-        path: ${{ steps.shaded_jar.outputs.shaded_jar_path }}
+        path: shaded_jar_path.txt
