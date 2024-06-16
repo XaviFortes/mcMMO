@@ -8,14 +8,14 @@ import com.gmail.nossr50.datatypes.player.PlayerProfile;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import com.gmail.nossr50.locale.LocaleLoader;
 import com.gmail.nossr50.mcMMO;
+import com.gmail.nossr50.util.CancellableRunnable;
 import com.gmail.nossr50.util.LogUtils;
 import com.gmail.nossr50.util.Misc;
 import com.gmail.nossr50.util.player.UserManager;
 import com.gmail.nossr50.util.skills.SkillTools;
 import org.bukkit.command.CommandSender;
-import org.bukkit.scheduler.BukkitRunnable;
 
-public class FormulaConversionTask extends BukkitRunnable {
+public class FormulaConversionTask extends CancellableRunnable {
     private final CommandSender sender;
     private final FormulaType formulaType;
 
@@ -44,8 +44,7 @@ public class FormulaConversionTask extends BukkitRunnable {
                 editValues(profile);
                 // Since this is a temporary profile, we save it here.
                 profile.scheduleAsyncSave();
-            }
-            else {
+            } else {
                 profile = mcMMOPlayer.getProfile();
                 editValues(profile);
             }

@@ -7,14 +7,17 @@ import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import com.gmail.nossr50.datatypes.skills.SuperAbilityType;
 import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.runnables.player.PlayerProfileSaveTask;
-import com.gmail.nossr50.skills.child.FamilyTree;
 import com.gmail.nossr50.util.player.UserManager;
 import com.gmail.nossr50.util.skills.SkillTools;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.DelayQueue;
 
 public class PlayerProfile {
@@ -97,21 +100,21 @@ public class PlayerProfile {
 
         loaded = true;
 
-        if(lastLogin != null)
+        if (lastLogin != null)
             this.lastLogin = lastLogin;
     }
 
     public void scheduleAsyncSave() {
-        new PlayerProfileSaveTask(this, false).runTaskAsynchronously(mcMMO.p);
+        mcMMO.p.getFoliaLib().getImpl().runAsync(new PlayerProfileSaveTask(this, false));
     }
 
     public void scheduleAsyncSaveDelay() {
-        new PlayerProfileSaveTask(this, false).runTaskLaterAsynchronously(mcMMO.p, 20);
+        mcMMO.p.getFoliaLib().getImpl().runLaterAsync(new PlayerProfileSaveTask(this, false), 20);
     }
 
     @Deprecated
     public void scheduleSyncSaveDelay() {
-        new PlayerProfileSaveTask(this, true).runTaskLater(mcMMO.p, 20);
+        mcMMO.p.getFoliaLib().getImpl().runLater(new PlayerProfileSaveTask(this, true), 20);
     }
 
     public void save(boolean useSync) {
@@ -127,18 +130,17 @@ public class PlayerProfile {
         if (changed) {
             mcMMO.p.getLogger().severe("PlayerProfile saving failed for player: " + playerName + " " + uuid);
 
-            if(saveAttempts > 0) {
+            if (saveAttempts > 0) {
                 mcMMO.p.getLogger().severe("Attempted to save profile for player "+getPlayerName()
                         + " resulted in failure. "+saveAttempts+" have been made so far.");
             }
 
-            if(saveAttempts < 10)
-            {
+            if (saveAttempts < 10) {
                 saveAttempts++;
 
                 //Back out of async saving if we detect a server shutdown, this is not always going to be caught
-                if(mcMMO.isServerShutdownExecuted() || useSync)
-                    new PlayerProfileSaveTask(this, true).runTask(mcMMO.p);
+                if (mcMMO.isServerShutdownExecuted() || useSync)
+                    mcMMO.p.getFoliaLib().getImpl().runNextTick(new PlayerProfileSaveTask(this, true));
                 else
                     scheduleAsyncSave();
 
@@ -268,7 +270,7 @@ public class PlayerProfile {
     }
 
     public int getSkillXpLevel(PrimarySkillType skill) {
-        if(SkillTools.isChildSkill(skill)) {
+        if (SkillTools.isChildSkill(skill)) {
             return 0;
         }
 
@@ -336,7 +338,7 @@ public class PlayerProfile {
         markProfileDirty();
 
         //Don't allow levels to be negative
-        if(level < 0)
+        if (level < 0)
             level = 0;
 
         skills.put(skill, level);
@@ -363,14 +365,13 @@ public class PlayerProfile {
         markProfileDirty();
 
         if (SkillTools.isChildSkill(skill)) {
-            Set<PrimarySkillType> parentSkills = FamilyTree.getParents(skill);
+            var parentSkills = mcMMO.p.getSkillTools().getChildSkillParents(skill);
             float dividedXP = (xp / parentSkills.size());
 
             for (PrimarySkillType parentSkill : parentSkills) {
                 skillsXp.put(parentSkill, skillsXp.get(parentSkill) + dividedXP);
             }
-        }
-        else {
+        } else {
             skillsXp.put(skill, skillsXp.get(skill) + xp);
         }
     }
@@ -421,7 +422,7 @@ public class PlayerProfile {
      * @return the total amount of Xp until next level
      */
     public int getXpToLevel(PrimarySkillType primarySkillType) {
-        if(SkillTools.isChildSkill(primarySkillType)) {
+        if (SkillTools.isChildSkill(primarySkillType)) {
             return 0;
         }
 
@@ -431,8 +432,12 @@ public class PlayerProfile {
         return mcMMO.getFormulaManager().getXPtoNextLevel(level, formulaType);
     }
 
-    private int getChildSkillLevel(PrimarySkillType primarySkillType) {
-        Set<PrimarySkillType> parents = FamilyTree.getParents(primarySkillType);
+    private int getChildSkillLevel(@NotNull PrimarySkillType primarySkillType) throws IllegalArgumentException {
+        if (!SkillTools.isChildSkill(primarySkillType)) {
+            throw new IllegalArgumentException(primarySkillType + " is not a child skill!");
+        }
+
+        ImmutableList<PrimarySkillType> parents = mcMMO.p.getSkillTools().getChildSkillParents(primarySkillType);
         int sum = 0;
 
         for (PrimarySkillType parent : parents) {

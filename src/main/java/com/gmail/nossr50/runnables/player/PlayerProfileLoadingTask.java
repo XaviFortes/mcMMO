@@ -5,6 +5,7 @@ import com.gmail.nossr50.datatypes.player.PlayerProfile;
 import com.gmail.nossr50.locale.LocaleLoader;
 import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.runnables.commands.McScoreboardKeepTask;
+import com.gmail.nossr50.util.CancellableRunnable;
 import com.gmail.nossr50.util.EventUtils;
 import com.gmail.nossr50.util.LogUtils;
 import com.gmail.nossr50.util.Misc;
@@ -12,9 +13,8 @@ import com.gmail.nossr50.util.player.UserManager;
 import com.gmail.nossr50.util.scoreboards.ScoreboardManager;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
-public class PlayerProfileLoadingTask extends BukkitRunnable {
+public class PlayerProfileLoadingTask extends CancellableRunnable {
     private final Player player;
     private int attempt = 0;
 
@@ -44,7 +44,7 @@ public class PlayerProfileLoadingTask extends BukkitRunnable {
 
         PlayerProfile profile = mcMMO.getDatabaseManager().loadPlayerProfile(player);
 
-        if(!profile.isLoaded()) {
+        if (!profile.isLoaded()) {
             LogUtils.debug(mcMMO.p.getLogger(), "Creating new data for player: "+player.getName());
             //Profile isn't loaded so add as new user
             profile = mcMMO.getDatabaseManager().newUser(player);
@@ -52,14 +52,13 @@ public class PlayerProfileLoadingTask extends BukkitRunnable {
 
         // If successful, schedule the apply
         if (profile.isLoaded()) {
-            new ApplySuccessfulProfile(new McMMOPlayer(player, profile)).runTask(mcMMO.p);
+            mcMMO.p.getFoliaLib().getImpl().runAtEntity(player, new ApplySuccessfulProfile(new McMMOPlayer(player, profile)));
             EventUtils.callPlayerProfileLoadEvent(player, profile);
             return;
         }
 
         // Print errors to console/logs if we're failing at least 2 times in a row to load the profile
-        if (attempt >= 3)
-        {
+        if (attempt >= 3) {
             //Log the error
             mcMMO.p.getLogger().severe(LocaleLoader.getString("Profile.Loading.FailureNotice",
                     player.getName(), String.valueOf(attempt)));
@@ -74,10 +73,10 @@ public class PlayerProfileLoadingTask extends BukkitRunnable {
         // Increment attempt counter and try
         attempt++;
 
-        new PlayerProfileLoadingTask(player, attempt).runTaskLaterAsynchronously(mcMMO.p, (100 + (attempt * 100L)));
+        mcMMO.p.getFoliaLib().getImpl().runLaterAsync(new PlayerProfileLoadingTask(player, attempt), (100 + (attempt * 100L)));
     }
 
-    private class ApplySuccessfulProfile extends BukkitRunnable {
+    private class ApplySuccessfulProfile extends CancellableRunnable {
         private final McMMOPlayer mcMMOPlayer;
 
         private ApplySuccessfulProfile(McMMOPlayer mcMMOPlayer) {
@@ -104,7 +103,7 @@ public class PlayerProfileLoadingTask extends BukkitRunnable {
 
                 if (mcMMO.p.getGeneralConfig().getShowStatsAfterLogin()) {
                     ScoreboardManager.enablePlayerStatsScoreboard(player);
-                    new McScoreboardKeepTask(player).runTaskLater(mcMMO.p, Misc.TICK_CONVERSION_FACTOR);
+                    mcMMO.p.getFoliaLib().getImpl().runAtEntityLater(player, new McScoreboardKeepTask(player), Misc.TICK_CONVERSION_FACTOR);
                 }
             }
 

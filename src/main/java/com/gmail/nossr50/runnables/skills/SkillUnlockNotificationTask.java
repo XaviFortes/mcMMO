@@ -2,11 +2,11 @@ package com.gmail.nossr50.runnables.skills;
 
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.datatypes.skills.SubSkillType;
+import com.gmail.nossr50.util.CancellableRunnable;
 import com.gmail.nossr50.util.player.NotificationManager;
-import org.bukkit.scheduler.BukkitRunnable;
 
 
-public class SkillUnlockNotificationTask extends BukkitRunnable {
+public class SkillUnlockNotificationTask extends CancellableRunnable {
     private final McMMOPlayer mcMMOPlayer;
     private final SubSkillType subSkillType;
     private final int rank;
@@ -16,8 +16,7 @@ public class SkillUnlockNotificationTask extends BukkitRunnable {
      * @param subSkillType the subskill that they just unlocked
      * @param rank the rank of the subskill
      */
-    public SkillUnlockNotificationTask(McMMOPlayer mcMMOPlayer, SubSkillType subSkillType, int rank)
-    {
+    public SkillUnlockNotificationTask(McMMOPlayer mcMMOPlayer, SubSkillType subSkillType, int rank) {
         this.mcMMOPlayer = mcMMOPlayer;
         this.subSkillType = subSkillType;
         this.rank = rank;

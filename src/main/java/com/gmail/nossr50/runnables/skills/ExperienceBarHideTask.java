@@ -2,16 +2,15 @@ package com.gmail.nossr50.runnables.skills;
 
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
+import com.gmail.nossr50.util.CancellableRunnable;
 import com.gmail.nossr50.util.experience.ExperienceBarManager;
-import org.bukkit.scheduler.BukkitRunnable;
 
-public class ExperienceBarHideTask extends BukkitRunnable {
+public class ExperienceBarHideTask extends CancellableRunnable {
     public final McMMOPlayer mcMMOPlayer;
     public final PrimarySkillType primarySkillType;
     public final ExperienceBarManager experienceBarManagerRef;
 
-    public ExperienceBarHideTask(ExperienceBarManager experienceBarManagerRef, McMMOPlayer mcMMOPlayer, PrimarySkillType primarySkillType)
-    {
+    public ExperienceBarHideTask(ExperienceBarManager experienceBarManagerRef, McMMOPlayer mcMMOPlayer, PrimarySkillType primarySkillType) {
         this.experienceBarManagerRef = experienceBarManagerRef;
         this.mcMMOPlayer = mcMMOPlayer;
         this.primarySkillType = primarySkillType;
@@ -30,7 +29,7 @@ public class ExperienceBarHideTask extends BukkitRunnable {
      */
     @Override
     public void run() {
-        if(experienceBarManagerRef == null || mcMMOPlayer == null)
+        if (experienceBarManagerRef == null || mcMMOPlayer == null)
             return;
 
         experienceBarManagerRef.hideExperienceBar(primarySkillType);
